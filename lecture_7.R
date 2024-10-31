@@ -8,7 +8,7 @@ starting_indices <- c(8, 30, 1, 19, 44)
 motiv_length <- 6
 
 
-Score <- function(starting_indices, seq_score, motiv_length){
+Score <- function(starting_indices, seq_score, motiv_length, l){
   motivs <- DNAStringSet()
   counter <- 1
   for (i in starting_indices){
@@ -19,7 +19,7 @@ Score <- function(starting_indices, seq_score, motiv_length){
 
   freq_matrix <- consensusMatrix(motivs)
   
-  max_values <- apply(freq_matrix, 2, max)
+  max_values <- apply(freq_matrix[1:l, ], 2, max)
   
   
   score <- sum(max_values)
@@ -76,3 +76,75 @@ l <- 6
 
 
 BFMotifSearch(DNA, t, n, l)
+
+
+
+
+
+
+NextVertex <- function(array_start, i, L, k){
+  if (i < L){
+    array_start[i+1] = 1
+    return(list(array_start, i+1))
+  }
+  else{
+    for (j in L:1){
+      if (array_start[j] < k){
+        array_start[j] <- array_start[j] + 1
+        return(list(array_start, j))
+      }
+    }
+  }
+  return(list(array_start, 0))
+}
+
+
+
+
+i <- 2
+NextVertex(array_start, i, L, k)
+
+
+
+ByPass <- function(array_start, i, L, k){
+  for (j in i:1){
+    if (array_start[j] < k){
+      array_start[j] <- array_start[j] + 1
+      return(list(array_start, j))
+    }
+  }
+  return(list(array_start, 0))
+  
+}
+
+
+ByPass(array_start, i, L, k)
+
+
+
+BBMotifSearch <- function(array_start, t, L, k){
+  s <- rep(1, l)
+  bestScore <- 0
+  i <- 1
+  while(i > 0){
+    if (i < t){
+      optimisticScore <- Score(s, i, DNA, l) + (t - i)*l
+      if (optimisticScore < bestScore){
+        list(s, i) <- ByPass(s, i, t, n - l + 1)
+      }
+      else {
+        list(s, i) <- NextVertex(s, i, t, n - l + 1)
+      }
+    }
+    else{
+      if (Score(s, t, DNA, l) > bestScore){
+        bestScore <- Score(s, t, DNA, l)
+        bestMotif <- s
+      }
+      list(s, i) <- NextVertex(s, i, t, n - l +1)
+    }
+  }
+  return(bestMotif)
+}
+
+BBMotifSearch(array_start, t, L, k)
